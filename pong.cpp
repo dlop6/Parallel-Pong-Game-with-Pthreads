@@ -11,7 +11,7 @@ const int WIDTH = 60;   // Ancho del campo
 const int HEIGHT = 10;  // Altura del campo
 const int MAX_SCORE = 10;  // Puntaje máximo para ganar
 
-int PLANE [HEIGHT][WIDTH];
+int PLANE [WIDTH][HEIGHT];
 // Convención para el plano
 // 0 coordenada vacía
 // 1 rebote vertical (techo)
@@ -87,7 +87,7 @@ public:
     void drawPaddle() {
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
-            PLANE[y + i][x] = 2;
+            PLANE[x][y + i] = 2;
             cout << "p";
         }
     }
@@ -95,7 +95,7 @@ public:
     void clearPreviousPosition() {
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
-            PLANE[y + i][x] = 0;
+            PLANE[x][y + i] = 0;
             cout << "  ";
         }
     }
@@ -141,18 +141,18 @@ public:
 
     void drawBall() {
         
-        if(PLANE[y][x] == 0 || PLANE[y][x] == 5){
+        if(PLANE[x][y] == 0 || PLANE[x][y] == 5){
             gotoxy(x, y);
-            PLANE[y][x] = 5;
+            PLANE[x][y] = 5;
             cout << "O";
         }
         
     }
 
     void clearPreviousPosition() {
-        if(PLANE[y][x] == 0 || PLANE[y][x] == 5){
+        if(PLANE[x][y] == 0 || PLANE[x][y] == 5){
             gotoxy(x, y);
-            PLANE[y][x] = 0;
+            PLANE[x][y] = 0;
             cout << " ";
         }
         
@@ -160,20 +160,20 @@ public:
 
     void updateBall() {
         
-        if (PLANE[y][x] == 1) {
+        if (PLANE[x][y] == 1) {
             dy *= -1;
         }
 
-        if(PLANE[y][x] == 2){
+        if(PLANE[x][y] == 2){
             dx *= -1;   
         }
         // Rebote en las paletas
 
         // Condiciones de puntuación
-        if(PLANE[y][x] == 3){
+        if(PLANE[x][y] == 3){
             player2Score++;
             resetBall();
-        }else if(PLANE[y][x] == 4) {
+        }else if(PLANE[x][y] == 4) {
             player1Score++;
             resetBall();
         }
@@ -213,13 +213,13 @@ public:
 
 void configurePlane(){
     for (int i = 0; i < WIDTH; i++) {
-        PLANE [0][i] = 1;           // Lógica borde superior
-        PLANE [HEIGHT -1][i] = 1;   // Lógica borde inferior
+        PLANE [i][0] = 1;           // Lógica borde superior
+        PLANE [i][HEIGHT -1] = 1;   // Lógica borde inferior
     }
 
     for (int i = 0; i < HEIGHT; i++) {
-        PLANE [i][0] = 3;           // Lógica borde izquierdo
-        PLANE [i][WIDTH-1] = 4;     // Lógica borde derecho
+        PLANE [0][i] = 3;           // Lógica borde izquierdo
+        PLANE [WIDTH-1][i] = 4;     // Lógica borde derecho
     }
 }
 
