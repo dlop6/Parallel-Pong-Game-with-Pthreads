@@ -7,8 +7,8 @@
 
 using namespace std;
 
-const int WIDTH = 60;   // Ancho del campo
-const int HEIGHT = 10;  // Altura del campo
+const int WIDTH = 70;   // Ancho del campo
+const int HEIGHT = 20;  // Altura del campo
 const int MAX_SCORE = 10;  // Puntaje máximo para ganar
 
 int PLANE [WIDTH][HEIGHT];
@@ -26,6 +26,8 @@ int player2Score = 0;   // Puntaje jugador 2 (CPU controlado)
 
 pthread_mutex_t consoleMutex;
 
+
+void displayScore();
 void gotoxy(int x, int y) {
     COORD coord;
     coord.X = x;
@@ -172,9 +174,11 @@ public:
         // Condiciones de puntuación
         if(PLANE[x][y] == 3){
             player2Score++;
+            displayScore();
             resetBall();
         }else if(PLANE[x][y] == 4) {
             player1Score++;
+            displayScore();
             resetBall();
         }
 
@@ -320,6 +324,7 @@ int main() {
     configurePlane();
     hideCursor();
     drawBoundary();
+    displayScore();
 
     pad1.drawPaddle();
     pad2.drawPaddle();
