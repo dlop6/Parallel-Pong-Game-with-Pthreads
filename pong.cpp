@@ -253,6 +253,9 @@ void showMenu() {
             player2down = VK_DOWN;
         }
     }
+
+    // Limpiar la pantalla después de mostrar el menú
+    system("cls");
 }
 
 int main() {
@@ -266,6 +269,8 @@ int main() {
 
     Paddle pad1(2, HEIGHT / 2);
     Paddle pad2(WIDTH - 3, HEIGHT / 2);  // Añadir segundo jugador si es 1v1
+
+    drawBoundary();  // Dibujar los bordes una vez al principio
 
     while (true) {
         if (GetAsyncKeyState(player1up)) {  // Control del jugador 1 hacia arriba
