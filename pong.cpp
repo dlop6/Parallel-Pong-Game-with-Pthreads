@@ -158,7 +158,7 @@ public:
         x = WIDTH / 2;
         y = HEIGHT / 2;
         dx *= -1;
-        dy = (dy == 0) ? 1 : dy;  // Evitar que la bola quede en línea recta
+        dy = (dy == 0) ? 1 : dy;  // evitar que la bola quede en línea recta
     }
 };
 
@@ -169,8 +169,8 @@ void displayScore() {
 
 void* moveBall(void* arg) {
     Ball* ball = (Ball*)arg;
-    Paddle pad1(2, HEIGHT / 2);   // Ajustado para dejar espacio a los bordes
-    Paddle pad2(WIDTH - 3, HEIGHT / 2);  // Ajustado para dejar espacio a los bordes
+    Paddle pad1(2, HEIGHT / 2);   // dejar espacio a los bordes
+    Paddle pad2(WIDTH - 3, HEIGHT / 2);  // Dejar espacio a los bordes
 
     pad1.drawPaddle();
     pad2.drawPaddle();
@@ -208,10 +208,16 @@ int main() {
     Paddle pad1(2, HEIGHT / 2);
 
     while (true) {
-        if (GetAsyncKeyState(VK_W)) {
+        if (GetAsyncKeyState(0x57)) {  // 'W' (código ASCII)
             pad1.moveUp();  // Mover la paleta del jugador 1 hacia arriba
-        } else if (GetAsyncKeyState(VK_S)) {
+        } else if (GetAsyncKeyState(0x53)) {  // 'S' (código ASCII)
             pad1.moveDown();  // Mover la paleta del jugador 1 hacia abajo
+        }
+
+        if (GetAsyncKeyState(0x26)) {  // Flecha hacia arriba
+            pad1.moveUp();
+        } else if (GetAsyncKeyState(0x28)) {  // Flecha hacia abajo 
+            pad1.moveDown();
         }
     }
 
