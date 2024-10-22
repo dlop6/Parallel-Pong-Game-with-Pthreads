@@ -123,16 +123,28 @@ public:
     }
 };
 
+void separacion(){
+
+    for (int i = 0; i < HEIGHT; i++) {
+        gotoxy(WIDTH / 2, i);
+        cout << ".";
+    }
+}
+
+
 int main() {
     Ball ball(WIDTH / 2, HEIGHT / 2, 1, 1);  
     Paddle paddle1(5, HEIGHT / 2 - 1);  
     Paddle paddle2(WIDTH - 5, HEIGHT / 2 - 1);  
+
+   
 
     hideCursor();  // Oculta el cursor
 
     while (true) {
         system("cls");  
         // Dibuja los paddles
+        separacion();
         paddle1.drawPaddle();
         paddle2.drawPaddle();
 
