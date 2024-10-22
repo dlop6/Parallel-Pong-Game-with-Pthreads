@@ -7,12 +7,24 @@
 
 using namespace std;
 
-const int WIDTH = 50;   // Ancho del campo
+const int WIDTH = 60;   // Ancho del campo
 const int HEIGHT = 10;  // Altura del campo
 const int MAX_SCORE = 10;  // Puntaje máximo para ganar
 
+int PLANE [HEIGHT][WIDTH];
+// Convención para el plano
+// 0 coordenada vacía
+// 1 rebote vertical (techo)
+// 2 rebote horizontal (pared)
+// 3 anotación izquierda
+// 4 anotación derecha
+// 5 ping pong
+
 int player1Score = 0;   // Puntaje jugador 1
 int player2Score = 0;   // Puntaje jugador 2 (CPU controlado)
+
+
+pthread_mutex_t consoleMutex;
 
 void gotoxy(int x, int y) {
     COORD coord;
@@ -38,6 +50,7 @@ void showCursor() {
 }
 
 void drawBoundary() {
+    system("cls");
     for (int i = 0; i < WIDTH; i++) {
         gotoxy(i, 0);
         cout << "#";  // Dibujar borde superior
@@ -58,24 +71,31 @@ void drawBoundary() {
     }
 }
 
+
 class Paddle {
-public:
+public: 
     int x, y;  // Posición de la paleta
+
+
     Paddle(int startX, int startY) {
         x = startX;
         y = startY;
     }
 
+
+
     void drawPaddle() {
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
-            cout << "||";
+            PLANE[y + i][x] = 2;
+            cout << "p";
         }
     }
 
     void clearPreviousPosition() {
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
+            PLANE[y + i][x] = 0;
             cout << "  ";
         }
     }
@@ -103,7 +123,9 @@ public:
             moveUp();
         }
     }
+
 };
+
 
 class Ball {
 public:
@@ -118,39 +140,66 @@ public:
     }
 
     void drawBall() {
-        gotoxy(x, y);
-        cout << "O";
+        
+        if(PLANE[y][x] == 0 || PLANE[y][x] == 5){
+            gotoxy(x, y);
+            PLANE[y][x] = 5;
+            cout << "O";
+        }
+        
     }
 
     void clearPreviousPosition() {
-        gotoxy(x, y);
-        cout << " ";
+        if(PLANE[y][x] == 0 || PLANE[y][x] == 5){
+            gotoxy(x, y);
+            PLANE[y][x] = 0;
+            cout << " ";
+        }
+        
     }
 
-    void updateBall(Paddle &pad1, Paddle &pad2) {
-        clearPreviousPosition();
-        x += dx;
-        y += dy;
-
-        // Rebote en la parte superior e inferior
-        if (y <= 1 || y >= HEIGHT - 2) {
+    void updateBall() {
+        
+        if (PLANE[y][x] == 1) {
             dy *= -1;
         }
 
-        // Rebote en las paletas
-        if (x == pad1.x && (y >= pad1.y && y <= pad1.y + 2)) {
-            dx *= -1;
-        } else if (x == pad2.x && (y >= pad2.y && y <= pad2.y + 2)) {
-            dx *= -1;
+        if(PLANE[y][x] == 2){
+            dx *= -1;   
         }
+        // Rebote en las paletas
 
         // Condiciones de puntuación
-        if (x <= 1) {
+        if(PLANE[y][x] == 3){
             player2Score++;
             resetBall();
-        } else if (x >= WIDTH - 2) {
+        }else if(PLANE[y][x] == 4) {
             player1Score++;
             resetBall();
+        }
+
+        clearPreviousPosition();
+        x += dx;
+        y += dy;
+        checkBoundaries();
+        // Rebote en la parte superior e inferior
+        
+
+    }
+
+    void checkBoundaries(){
+        if(x < 0){
+            x = 0;
+        }
+        if(x > WIDTH - 1){
+            x = WIDTH - 1;
+        }
+
+        if(y < 0){
+            y = 0;
+        }
+        if(y > HEIGHT -1 ){
+            y = HEIGHT - 1;
         }
     }
 
@@ -158,30 +207,87 @@ public:
         x = WIDTH / 2;
         y = HEIGHT / 2;
         dx *= -1;
-        dy = (dy == 0) ? 1 : dy;  // evitar que la bola quede en línea recta
+        //dy = (dy == 0) ? -1 : dy;  // evitar que la bola quede en línea recta
     }
 };
+
+void configurePlane(){
+    for (int i = 0; i < WIDTH; i++) {
+        PLANE [0][i] = 1;           // Lógica borde superior
+        PLANE [HEIGHT -1][i] = 1;   // Lógica borde inferior
+    }
+
+    for (int i = 0; i < HEIGHT; i++) {
+        PLANE [i][0] = 3;           // Lógica borde izquierdo
+        PLANE [i][WIDTH-1] = 4;     // Lógica borde derecho
+    }
+}
+
+Ball pongBall(WIDTH / 2, 1, -1, -1);
+int getBallY(){
+    
+    return pongBall.y;
+}
 
 void displayScore() {
     gotoxy(0, HEIGHT);
     cout << "Player 1: " << player1Score << " | CPU: " << player2Score << endl;
 }
 
+void* playerPaddleThread(void* arg){
+    Paddle* pad = (Paddle *)arg;
+
+    pad->drawPaddle();
+    while(true){
+        if (GetAsyncKeyState(0x57)) {
+            pthread_mutex_lock(&consoleMutex);  // 'W' (código ASCII)
+            pad->moveUp();  // Mover la paleta del jugador 1 hacia arriba
+            pthread_mutex_unlock(&consoleMutex);
+        } else if (GetAsyncKeyState(0x53)) {  // 'S' (código ASCII)
+            pthread_mutex_lock(&consoleMutex);
+            pad->moveDown();  // Mover la paleta del jugador 1 hacia abajo
+            pthread_mutex_unlock(&consoleMutex);
+        }
+
+        if (GetAsyncKeyState(0x26)) {  // Flecha hacia arriba
+            //pthread_mutex_lock(&consoleMutex);
+            pad->moveUp();
+            //pthread_mutex_unlock(&consoleMutex);
+        } else if (GetAsyncKeyState(0x28)) {  // Flecha hacia abajo 
+            //pthread_mutex_lock(&consoleMutex);
+            pad->moveDown();
+            //pthread_mutex_unlock(&consoleMutex);
+        }
+       std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+}
+
+
+void* aiPaddleThread(void* arg){
+    Paddle* pad = (Paddle *)arg;
+
+    int ballY;
+    while(true){
+        ballY = getBallY();
+        pthread_mutex_lock(&consoleMutex);
+        pad->CPUmove(ballY);
+        pthread_mutex_unlock(&consoleMutex);
+        
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+}
+
+
+
 void* moveBall(void* arg) {
     Ball* ball = (Ball*)arg;
-    Paddle pad1(2, HEIGHT / 2);   // dejar espacio a los bordes
-    Paddle pad2(WIDTH - 3, HEIGHT / 2);  // Dejar espacio a los bordes
-
-    pad1.drawPaddle();
-    pad2.drawPaddle();
-
+    
     while (true) {
-        ball->updateBall(pad1, pad2);
+        
+        pthread_mutex_lock(&consoleMutex);
+        ball->updateBall();
         ball->drawBall();
-        displayScore();
-        drawBoundary();
-
-        pad2.CPUmove(ball->y);  // Mover la paleta de la CPU
+        pthread_mutex_unlock(&consoleMutex);
 
         // Comprobar si algún jugador ha ganado
         if (player1Score >= MAX_SCORE) {
@@ -196,31 +302,37 @@ void* moveBall(void* arg) {
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
+    return NULL;
 }
 
+
+
 int main() {
-    Ball ball(WIDTH / 2, HEIGHT / 2, 1, 1);
-    hideCursor();
+    
+    
+    Paddle pad1(2, HEIGHT / 2);   // dejar espacio a los bordes
+    Paddle pad2(WIDTH - 3, HEIGHT / 2);  // Dejar espacio a los bordes
 
     pthread_t ballThread;
-    pthread_create(&ballThread, NULL, moveBall, &ball);
+    pthread_t playe1Thread;
+    pthread_t aiThread;
+    configurePlane();
+    hideCursor();
+    drawBoundary();
 
-    Paddle pad1(2, HEIGHT / 2);
+    pad1.drawPaddle();
+    pad2.drawPaddle();
+    pthread_mutex_init(&consoleMutex, NULL);
+    pthread_create(&ballThread, NULL, moveBall, &pongBall);
+    pthread_create(&playe1Thread, NULL, playerPaddleThread, &pad1);
+    pthread_create(&aiThread, NULL, aiPaddleThread, &pad2);
 
-    while (true) {
-        if (GetAsyncKeyState(0x57)) {  // 'W' (código ASCII)
-            pad1.moveUp();  // Mover la paleta del jugador 1 hacia arriba
-        } else if (GetAsyncKeyState(0x53)) {  // 'S' (código ASCII)
-            pad1.moveDown();  // Mover la paleta del jugador 1 hacia abajo
-        }
-
-        if (GetAsyncKeyState(0x26)) {  // Flecha hacia arriba
-            pad1.moveUp();
-        } else if (GetAsyncKeyState(0x28)) {  // Flecha hacia abajo 
-            pad1.moveDown();
-        }
-    }
 
     pthread_join(ballThread, NULL);
+    pthread_join(playe1Thread, NULL);
+    pthread_join(aiThread, NULL);
+    pthread_mutex_destroy(&consoleMutex);
+    
     return 0;
 }
