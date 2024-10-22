@@ -10,7 +10,6 @@ const int WIDTH = 50;   // Ancho del campo
 const int HEIGHT = 10;  // Altura del campo
 
 void gotoxy(int x, int y) {
-    system("cls");
     COORD coord;
     coord.X = x;
     coord.Y = y;
@@ -43,13 +42,44 @@ class Paddle {
         y = startY;
     }
 
-    void funcionesPaddle(){
-        return;
+    void drawPaddle(){
+        for (int i = 0; i < 3; i++) {
+            gotoxy(x, y + i);
+            cout << "||";
+        }
     }
 
+    void clearPreviousPosition(){
+        for (int i = 0; i < 3; i++){
+            gotoxy(x, y + i);
+            cout << "  ";
+        }
+    }
 
+    void updateUP(){
+        if (y > 0) {
+            clearPreviousPosition();
+            y--;
+            drawPaddle();
+        }
+    }
+
+    void updateDOWN(){
+        if (y + 3 < HEIGHT) {
+            clearPreviousPosition();
+            y++;
+            drawPaddle();
+        }
+    }
+
+    void CPUmove(int ballY){
+        if (y + 1 < ballY){
+            updateDOWN();
+        } else if (y > ballY){
+            updateUP();
+        }
+    }
 };
-
 
 class Ball {
 public:
@@ -69,7 +99,7 @@ public:
     }
 
     void clearPreviousPosition(){
-        gotoxy(x, y); // Borra la posición anterior
+        gotoxy(x, y);
         cout << " ";
     }
 
@@ -81,60 +111,48 @@ public:
         if (y <= 0 || y >= HEIGHT - 1) {
             dy *= -1;  // Rebote vertical
         }
-        if (x <= 0 || x >= WIDTH - 1) {
-           // TO DO: IMPLEMENTAR LÓGICA DE PUNTO A LA HORA DE TOCAR LOS BORDES HORIZONTALES
-        }
+       
     }
 
     void checkCollisionwithPad(Paddle pad){
-        
-        if (x == pad.x && y == pad.y){
-            dx *= -1;
+        if (dx < 0 && x == pad.x + 2 && (y >= pad.y && y <= pad.y + 2)) {
+            dx *= -1; 
+        } else if (dx > 0 && x == pad.x - 1 && (y >= pad.y && y <= pad.y + 2)) {
+            dx *= -1; 
         }
-
     }
 };
 
-
-
-
-void* moverBola(void* arg) {
-    Ball* ball = (Ball*)arg;
-
-    while (true) {
-        ball->drawBall();
-        this_thread::sleep_for(chrono::milliseconds(100));  // Control de la velocidad de la bola
-    }
-
-    pthread_exit(NULL);
-}
-
-void* dibujarPantalla(void* arg) {
-    while (true) {
-        // TO DO: DIBUJAR EL CAMPO DE JUEGO
-       
-        this_thread::sleep_for(chrono::milliseconds(100));  
-
-    pthread_exit(NULL);
-}
-}
-
 int main() {
-    Ball ball(WIDTH / 2, HEIGHT / 2, 1, 1); // Inicializa la bola en el centro
-    int paddleX = 5; // Posición del paddle
-    int paddleY = HEIGHT - 2; // Posición del paddle
-    int paddleWidth = 5; // Ancho del paddle
-
+    Ball ball(WIDTH / 2, HEIGHT / 2, 1, 1);  
+    Paddle paddle1(5, HEIGHT / 2 - 1);  
+    Paddle paddle2(WIDTH - 5, HEIGHT / 2 - 1);  
 
     hideCursor();  // Oculta el cursor
-    while (true) {
-        ball.updateBall();  // Actualiza la posición de la bola
-        ball.drawBall();  // Dibuja la bola
-       
 
+    while (true) {
+        system("cls");  
+        // Dibuja los paddles
+        paddle1.drawPaddle();
+        paddle2.drawPaddle();
+
+        // Detección de colisiones con paddles
+        ball.checkCollisionwithPad(paddle1);
+        ball.checkCollisionwithPad(paddle2);
+
+        // Mueve la bola y el paddle de la CPU
+        ball.updateBall();
+        paddle1.CPUmove(ball.y);
+        
+
+        // Dibuja la bola actualizada
+        ball.drawBall();
+
+        // Controla la velocidad del juego
         this_thread::sleep_for(chrono::milliseconds(50));
     }
-    showCursor();  // Muestra el cursor
+
+    showCursor();  // Muestra el cursor al final (aunque no se alcanza en este bucle)
 
     return 0;
 }
