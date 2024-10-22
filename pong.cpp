@@ -6,15 +6,50 @@
 
 using namespace std;
 
-const int WIDTH = 60;   // Ancho del campo
-const int HEIGHT = 20;  // Altura del campo
+const int WIDTH = 50;   // Ancho del campo
+const int HEIGHT = 10;  // Altura del campo
 
 void gotoxy(int x, int y) {
+    system("cls");
     COORD coord;
     coord.X = x;
     coord.Y = y;
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
 }
+
+void hideCursor() {
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 100;
+    info.bVisible = FALSE;
+    SetConsoleCursorInfo(consoleHandle, &info);
+}
+
+void showCursor() {
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 100;
+    info.bVisible = TRUE;
+    SetConsoleCursorInfo(consoleHandle, &info);
+}
+
+class Paddle {
+
+    public:
+    int x, y;
+
+    Paddle(int startX, int startY){
+        x = startX;
+        y = startY;
+    }
+
+    void funcionesPaddle(){
+        return;
+    }
+
+
+};
+
 
 class Ball {
 public:
@@ -28,59 +63,46 @@ public:
         dy = startDY;
     }
 
-    void move() {
-        // Verifica la colisión con bordes ANTES de actualizar la posición
-        detectarColisionBordes();
-
-        // Limpia la posición anterior
-        gotoxy(x, y);
-        cout << " ";  // Limpia la posición anterior de la bola
-
-        // Actualiza la posición
-        x += dx;
-        y += dy;
-
-        // Dibuja la nueva posición
+    void drawBall(){
         gotoxy(x, y);
         cout << "O";
     }
 
-    void bounce_y() {
-        dy = -dy;  // Invierte la dirección vertical
+    void clearPreviousPosition(){
+        gotoxy(x, y); // Borra la posición anterior
+        cout << " ";
     }
 
-    void bounce_x() {
-        dx = -dx;  // Invierte la dirección horizontal
-    }
+    void updateBall(){
+        clearPreviousPosition(); // Borrar la bola en la posición anterior
+        x += dx;
+        y += dy;
 
-    void reset_position() {
-        x = WIDTH / 2;
-        y = HEIGHT / 2;
-        bounce_x();  // Cambia la dirección horizontal al reiniciar
-    }
-
-private:
-    void detectarColisionBordes() {
-        // Verifica si la bola choca con los bordes superior o inferior antes de actualizar su posición
-        if (y + dy <= 0 || y + dy >= HEIGHT - 1) {
-            bounce_y();
+        if (y <= 0 || y >= HEIGHT - 1) {
+            dy *= -1;  // Rebote vertical
         }
+        if (x <= 0 || x >= WIDTH - 1) {
+           // TO DO: IMPLEMENTAR LÓGICA DE PUNTO A LA HORA DE TOCAR LOS BORDES HORIZONTALES
+        }
+    }
+
+    void checkCollisionwithPad(Paddle pad){
+        
+        if (x == pad.x && y == pad.y){
+            dx *= -1;
+        }
+
     }
 };
 
-void detectarColisionPaddle(Ball& ball, int paddleX, int paddleY, int paddleWidth) {
-    // Verifica si la bola choca con el paddle
-    if (ball.y == paddleY && ball.x >= paddleX && ball.x < paddleX + paddleWidth) {
-        ball.bounce_x();
-    }
-}
+
 
 
 void* moverBola(void* arg) {
     Ball* ball = (Ball*)arg;
 
     while (true) {
-        ball->move();
+        ball->drawBall();
         this_thread::sleep_for(chrono::milliseconds(100));  // Control de la velocidad de la bola
     }
 
@@ -89,10 +111,12 @@ void* moverBola(void* arg) {
 
 void* dibujarPantalla(void* arg) {
     while (true) {
+        // TO DO: DIBUJAR EL CAMPO DE JUEGO
        
         this_thread::sleep_for(chrono::milliseconds(100));  
 
     pthread_exit(NULL);
+}
 }
 
 int main() {
@@ -101,13 +125,16 @@ int main() {
     int paddleY = HEIGHT - 2; // Posición del paddle
     int paddleWidth = 5; // Ancho del paddle
 
-    while (true) {
-        system("cls");  // Limpia la pantalla
-        ball.move();
-        detectarColisionPaddle(ball, paddleX, paddleY, paddleWidth);
 
-        this_thread::sleep_for(chrono::milliseconds(100));
+    hideCursor();  // Oculta el cursor
+    while (true) {
+        ball.updateBall();  // Actualiza la posición de la bola
+        ball.drawBall();  // Dibuja la bola
+       
+
+        this_thread::sleep_for(chrono::milliseconds(50));
     }
+    showCursor();  // Muestra el cursor
 
     return 0;
 }
