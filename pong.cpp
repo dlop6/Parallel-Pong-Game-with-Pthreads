@@ -14,6 +14,10 @@ const int MAX_SCORE = 10;  // Puntaje máximo para ganar
 int player1Score = 0;   // Puntaje jugador 1
 int player2Score = 0;   // Puntaje jugador 2 (CPU controlado)
 
+int gamemode = 1; // 1 para dos jugadores, 2 para un jugador
+int gamespeed = 100; // 100 ms velocidad 
+char player1up = 'w', player1down = 's'; //Teclas jugador uno
+char player2up = VK_UP, player2down = VK_DOWN; // Teclas jugador dos
 void gotoxy(int x, int y) {
     COORD coord;
     coord.X = x;
@@ -181,7 +185,9 @@ void* moveBall(void* arg) {
         displayScore();
         drawBoundary();
 
-        pad2.CPUmove(ball->y);  // Mover la paleta de la CPU
+        if (gamemode == 1) {
+            pad2.CPUmove(ball->y);  // Mover la paleta de la CPU
+        }
 
         // Comprobar si algún jugador ha ganado
         if (player1Score >= MAX_SCORE) {
@@ -198,7 +204,60 @@ void* moveBall(void* arg) {
     }
 }
 
+void showMenu() {
+    int speedChoice;
+    int controlChoice;
+
+    // Modo de juego
+    cout << "Seleccione el modo de juego:\n";
+    cout << "1. 1 vs CPU\n";
+    cout << "2. 1 vs 1\n";
+    cin >> gamemode;
+
+    // Velocidad
+    cout << "Seleccione la velocidad del juego:\n";
+    cout << "1. Baja\n";
+    cout << "2. Media\n";
+    cout << "3. Alta\n";
+    cin >> speedChoice;
+
+    if (speedChoice == 1) gamespeed = 150;
+    else if (speedChoice == 2) gamespeed = 100;
+    else if (speedChoice == 3) gamespeed = 50;
+
+    // Controles del jugador 1
+    cout << "Seleccione los controles del Jugador 1:\n";
+    cout << "1. W/S\n";
+    cout << "2. Flechas arriba/abajo\n";
+    cin >> controlChoice;
+
+    if (controlChoice == 1) {
+        player1up = 'W';
+        player1down = 'S';
+    } else if (controlChoice == 2) {
+        player1up = VK_UP;
+        player1down = VK_DOWN;
+    }
+
+    if (gamemode == 2) {  // Si es 1v1, configurar los controles del jugador 2
+        cout << "Seleccione los controles del Jugador 2:\n";
+        cout << "1. W/S\n";
+        cout << "2. Flechas arriba/abajo\n";
+        cin >> controlChoice;
+
+        if (controlChoice == 1) {
+            player2up = 'W';
+            player2down = 'S';
+        } else if (controlChoice == 2) {
+            player2up = VK_UP;
+            player2down = VK_DOWN;
+        }
+    }
+}
+
 int main() {
+    showMenu();
+
     Ball ball(WIDTH / 2, HEIGHT / 2, 1, 1);
     hideCursor();
 
@@ -206,18 +265,21 @@ int main() {
     pthread_create(&ballThread, NULL, moveBall, &ball);
 
     Paddle pad1(2, HEIGHT / 2);
+    Paddle pad2(WIDTH - 3, HEIGHT / 2);  // Añadir segundo jugador si es 1v1
 
     while (true) {
-        if (GetAsyncKeyState(0x57)) {  // 'W' (código ASCII)
-            pad1.moveUp();  // Mover la paleta del jugador 1 hacia arriba
-        } else if (GetAsyncKeyState(0x53)) {  // 'S' (código ASCII)
-            pad1.moveDown();  // Mover la paleta del jugador 1 hacia abajo
+        if (GetAsyncKeyState(player1up)) {  // Control del jugador 1 hacia arriba
+            pad1.moveUp();
+        } else if (GetAsyncKeyState(player1down)) {  // Control del jugador 1 hacia abajo
+            pad1.moveDown();
         }
 
-        if (GetAsyncKeyState(0x26)) {  // Flecha hacia arriba
-            pad1.moveUp();
-        } else if (GetAsyncKeyState(0x28)) {  // Flecha hacia abajo 
-            pad1.moveDown();
+        if (gamemode == 2) {  // Si es 1v1, controlar la segunda paleta
+            if (GetAsyncKeyState(player2up)) {  // Control del jugador 2 hacia arriba
+                pad2.moveUp();
+            } else if (GetAsyncKeyState(player2down)) {  // Control del jugador 2 hacia abajo
+                pad2.moveDown();
+            }
         }
     }
 
