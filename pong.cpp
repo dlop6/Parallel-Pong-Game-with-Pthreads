@@ -32,6 +32,7 @@ const int HEIGHT = 15;  // Altura del campo
 const int MAX_SCORE = 3;  // Puntaje máximo para ganar
 
 
+
 bool colorLeftPaddle;
 bool colorRightPaddle;
 
@@ -129,7 +130,7 @@ public:
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
             PLANE[x][y + i] = paddleCode;
-            cout << "p";
+            cout << "||";
         }
     }
 
@@ -137,7 +138,7 @@ public:
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
             PLANE[x][y + i] = paddleCode;
-            cout << paddleColor <<  "p" << RESET;
+            cout << paddleColor <<  "||" << RESET;
         }
     }
 
