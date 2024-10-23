@@ -6,6 +6,8 @@
 #include <chrono>
 #include <pthread.h>
 #include <string>
+#include "menu.cpp"
+  
 
 using namespace std;
 
@@ -424,6 +426,7 @@ void* moveBall(void* arg) {
 
 int main() {
     
+    showMenu();  
     
     Paddle pad1(7, HEIGHT / 2, PADDLE1, FOREGROUND_BLUEE);   // dejar espacio a los bordes
     Paddle pad2(WIDTH - 7, HEIGHT / 2, PADDLE2, FOREGROUND_REED);  // Dejar espacio a los bordes
