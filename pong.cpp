@@ -26,7 +26,7 @@ const int SHORT_COLOR_CYCLES = 2;
 
 const int WIDTH = 66;   // Ancho del campo
 const int HEIGHT = 15;  // Altura del campo
-const int MAX_SCORE = 10;  // Puntaje máximo para ganar
+const int MAX_SCORE = 3;  // Puntaje máximo para ganar
 
 
 bool colorLeftPaddle;
@@ -383,12 +383,28 @@ void* moveBall(void* arg) {
 
         // Comprobar si algún jugador ha ganado
         if (player1Score >= MAX_SCORE) {
-            gotoxy(WIDTH / 2 - 5, HEIGHT / 2);
-            cout << "Player 1 Wins!";
+            pthread_mutex_lock(&consoleMutex);
+
+            string win = "Player 1 Wins!";
+            for(int i = 0; i < (int) win.length(); i++){
+                gotoxy(WIDTH / 2 - 5, HEIGHT / 2);
+                cout << FOREGROUND_YELLOW << win.substr(0, i) << RESET; 
+                std::this_thread::sleep_for(std::chrono::milliseconds(25));
+            }
+
+            pthread_mutex_unlock(&consoleMutex);
             break;
         } else if (player2Score >= MAX_SCORE) {
-            gotoxy(WIDTH / 2 - 5, HEIGHT / 2);
-            cout << "CPU Wins!";
+            pthread_mutex_lock(&consoleMutex);
+            
+            string win = "CPU Wins!";
+            for(int i = 0; i < (int) win.length(); i++){
+                gotoxy(WIDTH / 2 - 5, HEIGHT / 2);
+                cout << FOREGROUND_YELLOW << win.substr(0, i) << RESET; 
+                std::this_thread::sleep_for(std::chrono::milliseconds(25));
+            }
+
+            pthread_mutex_unlock(&consoleMutex);
             break;
         }
 
@@ -408,7 +424,7 @@ int main() {
 
     pthread_t ballThread;
     pthread_t playe1Thread;
-    pthread_t aiThread;
+    //pthread_t aiThread;
     configurePlane();
     hideCursor();
     drawBoundary();
@@ -420,13 +436,13 @@ int main() {
     pthread_mutex_init(&consoleMutex, NULL);
     pthread_create(&ballThread, NULL, moveBall, &pongBall);
     pthread_create(&playe1Thread, NULL, playerPaddleThread, &pad1);
-    pthread_create(&aiThread, NULL, aiPaddleThread, &pad2);
+    //pthread_create(&aiThread, NULL, aiPaddleThread, &pad2);
     
 
 
     pthread_join(ballThread, NULL);
     pthread_join(playe1Thread, NULL);
-    pthread_join(aiThread, NULL);
+    //pthread_join(aiThread, NULL);
     pthread_mutex_destroy(&consoleMutex);
     
     return 0;
