@@ -207,14 +207,17 @@ public:
         
 
         if(PLANE[x][y] == PADDLE1){
+            Beep(525,35);
             colorPaddle1 = LONG_COLOR_CYCLES;
             dx *= -1;   
         }
         else if(PLANE[x][y] == PADDLE2){
+            Beep(525,35);
             colorPaddle2 = LONG_COLOR_CYCLES;
             dx *= -1;   
         }
         else if (PLANE[x][y] == PLANE_VERTICAL) {
+            Beep(525,35);
             dy *= -1;
         }
         // Rebote en las paletas
@@ -389,7 +392,7 @@ void* moveBall(void* arg) {
             for(int i = 0; i < (int) win.length(); i++){
                 gotoxy(WIDTH / 2 - 5, HEIGHT / 2);
                 cout << FOREGROUND_YELLOW << win.substr(0, i) << RESET; 
-                std::this_thread::sleep_for(std::chrono::milliseconds(25));
+                std::this_thread::sleep_for(std::chrono::milliseconds(75));
             }
 
             pthread_mutex_unlock(&consoleMutex);
@@ -401,7 +404,7 @@ void* moveBall(void* arg) {
             for(int i = 0; i < (int) win.length(); i++){
                 gotoxy(WIDTH / 2 - 5, HEIGHT / 2);
                 cout << FOREGROUND_YELLOW << win.substr(0, i) << RESET; 
-                std::this_thread::sleep_for(std::chrono::milliseconds(25));
+                std::this_thread::sleep_for(std::chrono::milliseconds(75));
             }
 
             pthread_mutex_unlock(&consoleMutex);
