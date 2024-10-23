@@ -4,14 +4,46 @@
 #include <thread>
 #include <chrono>
 #include <pthread.h>
+#include <string>
 
 using namespace std;
 
-const int WIDTH = 70;   // Ancho del campo
-const int HEIGHT = 20;  // Altura del campo
+
+//Colores
+const std::string RESET = "\u001b[0m";
+const std::string FOREGROUND_BLACK = "\u001b[30m";
+const std::string FOREGROUND_REED = "\u001b[31m";
+const std::string FOREGROUND_GREEEN = "\u001b[32m";
+const std::string FOREGROUND_YELLOW = "\u001b[33m";
+const std::string FOREGROUND_BLUEE = "\u001b[34m";
+const std::string FOREGROUND_MAGENTA = "\u001b[35m";
+const std::string FOREGROUND_CYAN = "\u001b[36m";
+const std::string FOREGROUND_WHITE = "\u001b[37m";
+const std::string FOREGROUND_DEFAULT = "\u001b[39m";
+const int LONG_COLOR_CYCLES = 5;
+const int SHORT_COLOR_CYCLES = 2;
+//Final colores
+
+const int WIDTH = 66;   // Ancho del campo
+const int HEIGHT = 15;  // Altura del campo
 const int MAX_SCORE = 10;  // Puntaje máximo para ganar
 
+
+bool colorLeftPaddle;
+bool colorRightPaddle;
+
+
 int PLANE [WIDTH][HEIGHT];
+const int PLANE_EMPTY = 0;
+const int PLANE_VERTICAL = 1;
+const int PADDLE1 = 2;
+const int PADDLE2 = 3;
+const int LEFTSCORE = 4;
+const int RIGHTSCORE = 5;
+const int BALL = 6;
+
+int colorPaddle1 = 0;
+int colorPaddle2 = 0;
 // Convención para el plano
 // 0 coordenada vacía
 // 1 rebote vertical (techo)
@@ -53,35 +85,39 @@ void showCursor() {
 
 void drawBoundary() {
     system("cls");
-    for (int i = 0; i < WIDTH; i++) {
-        gotoxy(i, 0);
-        cout << "#";  // Dibujar borde superior
-        gotoxy(i, HEIGHT - 1);
-        cout << "#";  // Dibujar borde inferior
-    }
+    
 
     for (int i = 0; i < HEIGHT; i++) {
         gotoxy(0, i);
-        cout << "#";  // Borde izquierdo
+        cout << FOREGROUND_BLUEE <<"[" << RESET;  // Borde izquierdo
         gotoxy(WIDTH - 1, i);
-        cout << "#";  // Borde derecho
+        cout << FOREGROUND_REED << "]" << RESET;  // Borde derecho
+    }
+
+    for (int i = 0; i < WIDTH; i++) {
+        gotoxy(i, 0);
+        cout << FOREGROUND_GREEEN <<"#" << RESET;  // Dibujar borde superior
+        gotoxy(i, HEIGHT - 1);
+        cout << FOREGROUND_GREEEN << "#" << RESET;  // Dibujar borde inferior
     }
 
     for (int i = 0; i < HEIGHT; i++) {
         gotoxy(WIDTH / 2, i);
-        cout << "|";  // Línea central
+        cout << FOREGROUND_GREEEN << "|" << RESET;  // Línea central
     }
 }
 
 
 class Paddle {
 public: 
-    int x, y;  // Posición de la paleta
+    int x, y, paddleCode;  // Posición de la paleta
+    string paddleColor;
 
-
-    Paddle(int startX, int startY) {
+    Paddle(int startX, int startY, int code, string color) {
         x = startX;
         y = startY;
+        paddleCode = code;
+        paddleColor = color;
     }
 
 
@@ -89,15 +125,23 @@ public:
     void drawPaddle() {
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
-            PLANE[x][y + i] = 2;
+            PLANE[x][y + i] = paddleCode;
             cout << "p";
+        }
+    }
+
+    void drawPaddleWithColor(){
+        for (int i = 0; i < 3; i++) {
+            gotoxy(x, y + i);
+            PLANE[x][y + i] = paddleCode;
+            cout << paddleColor <<  "p" << RESET;
         }
     }
 
     void clearPreviousPosition() {
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
-            PLANE[x][y + i] = 0;
+            PLANE[x][y + i] = PLANE_EMPTY;
             cout << "  ";
         }
     }
@@ -106,7 +150,6 @@ public:
         if (y > 1) {  // Ajuste para evitar pasar del borde superior
             clearPreviousPosition();
             y--;
-            drawPaddle();
         }
     }
 
@@ -114,7 +157,6 @@ public:
         if (y + 3 < HEIGHT - 1) {  // Ajuste para evitar pasar del borde inferior
             clearPreviousPosition();
             y++;
-            drawPaddle();
         }
     }
 
@@ -143,18 +185,18 @@ public:
 
     void drawBall() {
         
-        if(PLANE[x][y] == 0 || PLANE[x][y] == 5){
+        if(PLANE[x][y] == PLANE_EMPTY || PLANE[x][y] == BALL){
             gotoxy(x, y);
-            PLANE[x][y] = 5;
+            PLANE[x][y] = BALL;
             cout << "O";
         }
         
     }
 
     void clearPreviousPosition() {
-        if(PLANE[x][y] == 0 || PLANE[x][y] == 5){
+        if(PLANE[x][y] == PLANE_EMPTY || PLANE[x][y] == BALL){
             gotoxy(x, y);
-            PLANE[x][y] = 0;
+            PLANE[x][y] = PLANE_EMPTY;
             cout << " ";
         }
         
@@ -162,21 +204,27 @@ public:
 
     void updateBall() {
         
-        if (PLANE[x][y] == 1) {
-            dy *= -1;
-        }
+        
 
-        if(PLANE[x][y] == 2){
+        if(PLANE[x][y] == PADDLE1){
+            colorPaddle1 = LONG_COLOR_CYCLES;
             dx *= -1;   
+        }
+        else if(PLANE[x][y] == PADDLE2){
+            colorPaddle2 = LONG_COLOR_CYCLES;
+            dx *= -1;   
+        }
+        else if (PLANE[x][y] == PLANE_VERTICAL) {
+            dy *= -1;
         }
         // Rebote en las paletas
 
         // Condiciones de puntuación
-        if(PLANE[x][y] == 3){
+        if(PLANE[x][y] == LEFTSCORE){
             player2Score++;
             displayScore();
             resetBall();
-        }else if(PLANE[x][y] == 4) {
+        }else if(PLANE[x][y] == RIGHTSCORE) {
             player1Score++;
             displayScore();
             resetBall();
@@ -217,13 +265,13 @@ public:
 
 void configurePlane(){
     for (int i = 0; i < WIDTH; i++) {
-        PLANE [i][0] = 1;           // Lógica borde superior
-        PLANE [i][HEIGHT -1] = 1;   // Lógica borde inferior
+        PLANE [i][0] = PLANE_VERTICAL;           // Lógica borde superior
+        PLANE [i][HEIGHT -1] = PLANE_VERTICAL;   // Lógica borde inferior
     }
 
     for (int i = 0; i < HEIGHT; i++) {
-        PLANE [0][i] = 3;           // Lógica borde izquierdo
-        PLANE [WIDTH-1][i] = 4;     // Lógica borde derecho
+        PLANE [0][i] = LEFTSCORE;           // Lógica borde izquierdo
+        PLANE [WIDTH-1][i] = RIGHTSCORE;     // Lógica borde derecho
     }
 }
 
@@ -241,18 +289,20 @@ void displayScore() {
 void* playerPaddleThread(void* arg){
     Paddle* pad = (Paddle *)arg;
 
-    pad->drawPaddle();
     while(true){
         if (GetAsyncKeyState(0x57)) {
             pthread_mutex_lock(&consoleMutex);  // 'W' (código ASCII)
             pad->moveUp();  // Mover la paleta del jugador 1 hacia arriba
+            
+            
             pthread_mutex_unlock(&consoleMutex);
         } else if (GetAsyncKeyState(0x53)) {  // 'S' (código ASCII)
             pthread_mutex_lock(&consoleMutex);
-            pad->moveDown();  // Mover la paleta del jugador 1 hacia abajo
+            pad->moveDown();  // Mover la paleta del jugador 1 hacia abajo;
             pthread_mutex_unlock(&consoleMutex);
         }
 
+        /*
         if (GetAsyncKeyState(0x26)) {  // Flecha hacia arriba
             //pthread_mutex_lock(&consoleMutex);
             pad->moveUp();
@@ -262,6 +312,26 @@ void* playerPaddleThread(void* arg){
             pad->moveDown();
             //pthread_mutex_unlock(&consoleMutex);
         }
+        */
+
+        if(colorPaddle1 > 0 && pad->paddleCode == PADDLE1){
+                pthread_mutex_lock(&consoleMutex);
+                pad->drawPaddleWithColor();
+                pthread_mutex_unlock(&consoleMutex);
+                colorPaddle1--;
+                //colorPaddle1 = false;
+            }
+            else if(colorPaddle2 > 0 && pad->paddleCode == PADDLE2){
+                pthread_mutex_lock(&consoleMutex);
+                pad->drawPaddleWithColor();
+                pthread_mutex_unlock(&consoleMutex);
+                colorPaddle2--;
+                //colorPaddle2 = false;
+            }else{
+                pthread_mutex_lock(&consoleMutex);
+                pad->drawPaddle();
+                pthread_mutex_unlock(&consoleMutex);
+            }
        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
@@ -270,15 +340,33 @@ void* playerPaddleThread(void* arg){
 void* aiPaddleThread(void* arg){
     Paddle* pad = (Paddle *)arg;
 
+    
     int ballY;
     while(true){
         ballY = getBallY();
         pthread_mutex_lock(&consoleMutex);
         pad->CPUmove(ballY);
         pthread_mutex_unlock(&consoleMutex);
+        if(colorPaddle1 > 0 && pad->paddleCode == PADDLE1){
+            pthread_mutex_lock(&consoleMutex);
+            pad->drawPaddleWithColor();
+            pthread_mutex_unlock(&consoleMutex);
+            colorPaddle1--;
+        }
+        else if(colorPaddle2 > 0 && pad->paddleCode == PADDLE2){
+            pthread_mutex_lock(&consoleMutex);
+            pad->drawPaddleWithColor();
+            pthread_mutex_unlock(&consoleMutex);
+            colorPaddle2--;
+        }else{
+            pthread_mutex_lock(&consoleMutex);
+            pad->drawPaddle();
+            pthread_mutex_unlock(&consoleMutex);
+        }
         
+        std::this_thread::sleep_for(std::chrono::milliseconds(125));
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    
 }
 
 
@@ -315,8 +403,8 @@ void* moveBall(void* arg) {
 int main() {
     
     
-    Paddle pad1(2, HEIGHT / 2);   // dejar espacio a los bordes
-    Paddle pad2(WIDTH - 3, HEIGHT / 2);  // Dejar espacio a los bordes
+    Paddle pad1(7, HEIGHT / 2, PADDLE1, FOREGROUND_BLUEE);   // dejar espacio a los bordes
+    Paddle pad2(WIDTH - 7, HEIGHT / 2, PADDLE2, FOREGROUND_REED);  // Dejar espacio a los bordes
 
     pthread_t ballThread;
     pthread_t playe1Thread;
@@ -328,10 +416,12 @@ int main() {
 
     pad1.drawPaddle();
     pad2.drawPaddle();
+
     pthread_mutex_init(&consoleMutex, NULL);
     pthread_create(&ballThread, NULL, moveBall, &pongBall);
     pthread_create(&playe1Thread, NULL, playerPaddleThread, &pad1);
     pthread_create(&aiThread, NULL, aiPaddleThread, &pad2);
+    
 
 
     pthread_join(ballThread, NULL);
