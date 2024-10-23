@@ -189,7 +189,7 @@ public:
         if(PLANE[x][y] == PLANE_EMPTY || PLANE[x][y] == BALL){
             gotoxy(x, y);
             PLANE[x][y] = BALL;
-            cout << "O";
+            cout << "\u03b8";
         }
         
     }
@@ -430,7 +430,7 @@ int main() {
 
     pthread_t ballThread;
     pthread_t playe1Thread;
-    //pthread_t aiThread;
+    pthread_t aiThread;
     configurePlane();
     hideCursor();
     drawBoundary();
@@ -442,13 +442,13 @@ int main() {
     pthread_mutex_init(&consoleMutex, NULL);
     pthread_create(&ballThread, NULL, moveBall, &pongBall);
     pthread_create(&playe1Thread, NULL, playerPaddleThread, &pad1);
-    //pthread_create(&aiThread, NULL, aiPaddleThread, &pad2);
+    pthread_create(&aiThread, NULL, aiPaddleThread, &pad2);
     
 
 
     pthread_join(ballThread, NULL);
     pthread_join(playe1Thread, NULL);
-    //pthread_join(aiThread, NULL);
+    pthread_join(aiThread, NULL);
     pthread_mutex_destroy(&consoleMutex);
     
     return 0;
