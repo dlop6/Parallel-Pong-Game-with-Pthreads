@@ -1,6 +1,7 @@
 
 #include <iostream>
-#include <windows.h>  
+#include <windows.h> 
+#include <mmsystem.h> 
 #include <thread>
 #include <chrono>
 #include <pthread.h>
@@ -207,17 +208,17 @@ public:
         
 
         if(PLANE[x][y] == PADDLE1){
-            Beep(525,35);
+            PlaySound(TEXT("wall.wav"), NULL, SND_ASYNC);
             colorPaddle1 = LONG_COLOR_CYCLES;
             dx *= -1;   
         }
         else if(PLANE[x][y] == PADDLE2){
-            Beep(525,35);
+            PlaySound(TEXT("paddle.wav"), NULL, SND_ASYNC);
             colorPaddle2 = LONG_COLOR_CYCLES;
             dx *= -1;   
         }
         else if (PLANE[x][y] == PLANE_VERTICAL) {
-            Beep(525,35);
+            PlaySound(TEXT("paddle.wav"), NULL,  SND_ASYNC);
             dy *= -1;
         }
         // Rebote en las paletas
@@ -389,6 +390,7 @@ void* moveBall(void* arg) {
             pthread_mutex_lock(&consoleMutex);
 
             string win = "Player 1 Wins!";
+            PlaySound(TEXT("victory.wav"), NULL,  SND_ASYNC);
             for(int i = 0; i < (int) win.length(); i++){
                 gotoxy(WIDTH / 2 - 5, HEIGHT / 2);
                 cout << FOREGROUND_YELLOW << win.substr(0, i) << RESET; 
@@ -400,6 +402,7 @@ void* moveBall(void* arg) {
         } else if (player2Score >= MAX_SCORE) {
             pthread_mutex_lock(&consoleMutex);
             
+            PlaySound(TEXT("victory.wav"), NULL,  SND_ASYNC);
             string win = "CPU Wins!";
             for(int i = 0; i < (int) win.length(); i++){
                 gotoxy(WIDTH / 2 - 5, HEIGHT / 2);
