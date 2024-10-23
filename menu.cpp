@@ -1,6 +1,18 @@
 #include <iostream>
+#include <windows.h>
 
 using namespace std;
+
+const std::string RESET = "\u001b[0m";
+const std::string FOREGROUND_BLACK = "\u001b[30m";
+const std::string FOREGROUND_REED = "\u001b[31m";
+const std::string FOREGROUND_GREEEN = "\u001b[32m";
+const std::string FOREGROUND_YELLOW = "\u001b[33m";
+const std::string FOREGROUND_BLUEE = "\u001b[34m";
+const std::string FOREGROUND_MAGENTA = "\u001b[35m";
+const std::string FOREGROUND_CYAN = "\u001b[36m";
+const std::string FOREGROUND_WHITE = "\u001b[37m";
+const std::string FOREGROUND_DEFAULT = "\u001b[39m";
 
 int gameMode = 1;  // 1v1 por defecto
 int ballSpeed = 100;  // Velocidad media por defecto
@@ -9,17 +21,18 @@ int ballSpeed = 100;  // Velocidad media por defecto
 void showMenu() {
     int speedOption;
 
-    cout << "Selecciona el modo de juego:\n";
-    cout << "1. 1v1 \n";
-    cout << "2. 1vCPU \n";
-    cout << "Opcion: ";
+    system("cls");
+    cout << FOREGROUND_BLACK << "Selecciona el modo de juego:\n" << RESET;
+    cout << FOREGROUND_CYAN <<  "1. 1v1 \n" << RESET;
+    cout << FOREGROUND_MAGENTA << "2. 1vCPU \n" << RESET;
+    cout << FOREGROUND_BLACK << "Opcion: ";
     cin >> gameMode;
 
-    cout << "\nSelecciona la velocidad de la pelota:\n";
-    cout << "1. Baja\n";
-    cout << "2. Media\n";
-    cout << "3. Alta\n";
-    cout << "Opcion: ";
+    cout << FOREGROUND_BLACK << "\nSelecciona la velocidad de la pelota:\n" << RESET ;
+    cout << FOREGROUND_MAGENTA << "1. Baja\n" << RESET;
+    cout << FOREGROUND_CYAN << "2. Media\n" << RESET;
+    cout << FOREGROUND_YELLOW << "3. Alta\n" << RESET;
+    cout << FOREGROUND_BLACK <<  "Opcion: " << RESET;
     cin >> speedOption;
 
     // Asignamos la velocidad según la selección
@@ -28,6 +41,12 @@ void showMenu() {
         case 2: ballSpeed = 100; break; // Media (default)
         case 3: ballSpeed = 50; break;  // Alta
         default: ballSpeed = 100; break; // Si la opción es inválida, se usa la media
+    }
+
+    switch (gameMode) {
+        case 1: gameMode = 1; break; // 1v1
+        case 2: gameMode = 2; break; // 1vCPU
+        default: gameMode = 1; break; // Si la opción es inválida, se usa la media
     }
 
     // Imprimir la selección para verificar que funciona correctamente
