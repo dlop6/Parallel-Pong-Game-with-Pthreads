@@ -130,7 +130,7 @@ public:
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
             PLANE[x][y + i] = paddleCode;
-            cout << "||";
+            cout << "|";
         }
     }
 
@@ -138,7 +138,7 @@ public:
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
             PLANE[x][y + i] = paddleCode;
-            cout << paddleColor <<  "||" << RESET;
+            cout << paddleColor <<  "|" << RESET;
         }
     }
 
@@ -293,55 +293,52 @@ void displayScore() {
     cout << "Player 1: " << player1Score << " | CPU: " << player2Score << endl;
 }
 
-void* playerPaddleThread(void* arg){
-    Paddle* pad = (Paddle *)arg;
+void* playerPaddleThread(void* arg) {
+    Paddle* pad = (Paddle*)arg;
 
-    while(true){
-        if (GetAsyncKeyState(0x57)) {
-            pthread_mutex_lock(&consoleMutex);  // 'W' (código ASCII)
-            pad->moveUp();  // Mover la paleta del jugador 1 hacia arriba
-            
-            
-            pthread_mutex_unlock(&consoleMutex);
-        } else if (GetAsyncKeyState(0x53)) {  // 'S' (código ASCII)
+    while (true) {
+        if (pad->paddleCode == PADDLE1) {  // Controles para el jugador 1
+            if (GetAsyncKeyState(0x57)) {  // 'W'
+                pthread_mutex_lock(&consoleMutex);
+                pad->moveUp();
+                pthread_mutex_unlock(&consoleMutex);
+            } else if (GetAsyncKeyState(0x53)) {  // 'S'
+                pthread_mutex_lock(&consoleMutex);
+                pad->moveDown();
+                pthread_mutex_unlock(&consoleMutex);
+            }
+        } else if (pad->paddleCode == PADDLE2) {  // Controles para el jugador 2
+            if (GetAsyncKeyState(0x26)) {  // Flecha arriba
+                pthread_mutex_lock(&consoleMutex);
+                pad->moveUp();
+                pthread_mutex_unlock(&consoleMutex);
+            } else if (GetAsyncKeyState(0x28)) {  // Flecha abajo
+                pthread_mutex_lock(&consoleMutex);
+                pad->moveDown();
+                pthread_mutex_unlock(&consoleMutex);
+            }
+        }
+
+        if (colorPaddle1 > 0 && pad->paddleCode == PADDLE1) {
             pthread_mutex_lock(&consoleMutex);
-            pad->moveDown();  // Mover la paleta del jugador 1 hacia abajo;
+            pad->drawPaddleWithColor();
+            pthread_mutex_unlock(&consoleMutex);
+            colorPaddle1--;
+        } else if (colorPaddle2 > 0 && pad->paddleCode == PADDLE2) {
+            pthread_mutex_lock(&consoleMutex);
+            pad->drawPaddleWithColor();
+            pthread_mutex_unlock(&consoleMutex);
+            colorPaddle2--;
+        } else {
+            pthread_mutex_lock(&consoleMutex);
+            pad->drawPaddle();
             pthread_mutex_unlock(&consoleMutex);
         }
 
-        /*
-        if (GetAsyncKeyState(0x26)) {  // Flecha hacia arriba
-            //pthread_mutex_lock(&consoleMutex);
-            pad->moveUp();
-            //pthread_mutex_unlock(&consoleMutex);
-        } else if (GetAsyncKeyState(0x28)) {  // Flecha hacia abajo 
-            //pthread_mutex_lock(&consoleMutex);
-            pad->moveDown();
-            //pthread_mutex_unlock(&consoleMutex);
-        }
-        */
-
-        if(colorPaddle1 > 0 && pad->paddleCode == PADDLE1){
-                pthread_mutex_lock(&consoleMutex);
-                pad->drawPaddleWithColor();
-                pthread_mutex_unlock(&consoleMutex);
-                colorPaddle1--;
-                //colorPaddle1 = false;
-            }
-            else if(colorPaddle2 > 0 && pad->paddleCode == PADDLE2){
-                pthread_mutex_lock(&consoleMutex);
-                pad->drawPaddleWithColor();
-                pthread_mutex_unlock(&consoleMutex);
-                colorPaddle2--;
-                //colorPaddle2 = false;
-            }else{
-                pthread_mutex_lock(&consoleMutex);
-                pad->drawPaddle();
-                pthread_mutex_unlock(&consoleMutex);
-            }
-       std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 }
+
 
 
 void* aiPaddleThread(void* arg){
@@ -426,15 +423,14 @@ void* moveBall(void* arg) {
 
 
 int main() {
-    
-    showMenu();  
+    showMenu();  // Muestra el menú para seleccionar el modo de juego
     
     Paddle pad1(7, HEIGHT / 2, PADDLE1, FOREGROUND_BLUEE);   // dejar espacio a los bordes
     Paddle pad2(WIDTH - 7, HEIGHT / 2, PADDLE2, FOREGROUND_REED);  // Dejar espacio a los bordes
 
     pthread_t ballThread;
-    pthread_t playe1Thread;
-    //pthread_t aiThread;
+    pthread_t player1Thread;
+    pthread_t player2Thread;  // Hilo para jugador 2 o CPU
     configurePlane();
     hideCursor();
     drawBoundary();
@@ -444,15 +440,26 @@ int main() {
     pad2.drawPaddle();
 
     pthread_mutex_init(&consoleMutex, NULL);
-    pthread_create(&ballThread, NULL, moveBall, &pongBall);
-    pthread_create(&playe1Thread, NULL, playerPaddleThread, &pad1);
-    //pthread_create(&aiThread, NULL, aiPaddleThread, &pad2);
-    
 
+    // Crea el hilo de la bola
+    pthread_create(&ballThread, NULL, moveBall, &pongBall);
+
+    // Crea el hilo del jugador 1
+    pthread_create(&player1Thread, NULL, playerPaddleThread, &pad1);
+
+    // Verifica el modo de juego
+    if (gameMode == 1) {
+        // Modo 1v1, jugador 2 controlado por humano
+        pthread_create(&player2Thread, NULL, playerPaddleThread, &pad2);
+    } else if (gameMode == 2) {
+        // Modo 1vCPU, jugador 2 controlado por CPU
+        pthread_create(&player2Thread, NULL, aiPaddleThread, &pad2);
+    }
 
     pthread_join(ballThread, NULL);
-    pthread_join(playe1Thread, NULL);
-    //pthread_join(aiThread, NULL);
+    pthread_join(player1Thread, NULL);
+    pthread_join(player2Thread, NULL);
+
     pthread_mutex_destroy(&consoleMutex);
     
     return 0;
