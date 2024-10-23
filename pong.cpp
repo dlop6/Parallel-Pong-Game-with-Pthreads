@@ -123,7 +123,7 @@ public:
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
             PLANE[x][y + i] = paddleCode;
-            cout << "I";
+            cout << "||";
         }
     }
 
@@ -131,7 +131,7 @@ public:
         for (int i = 0; i < 3; i++) {
             gotoxy(x, y + i);
             PLANE[x][y + i] = paddleCode;
-            cout << paddleColor <<  "I" << RESET;
+            cout << paddleColor <<  "||" << RESET;
         }
     }
 
